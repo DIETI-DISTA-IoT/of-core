@@ -324,34 +324,6 @@ class ContainerManager:
             return "Error stopping wandber"
 
 
-    def start_wandb(self):
-
-        start_command = f"python wandber.py " + \
-            f" --logging_level={self.cfg.logging_level} " + \
-            f" --project_name={self.cfg.wandb.project_name} " + \
-            f" --run_name={self.cfg.wandb.run_name} " + \
-            f" --kafka_broker_url={self.cfg.wandb.kafka_broker_url} " + \
-            f" --kafka_consumer_group_id={self.cfg.wandb.kafka_consumer_group_id} " + \
-            f" --kafka_auto_offset_reset={self.cfg.wandb.kafka_auto_offset_reset} " + \
-            f" --kafka_topic_update_interval_secs={self.cfg.kafka_topic_update_interval_secs}"
-                
-        if self.cfg.wandb.online:
-            start_command += " --online"
-        
-        def run_wandber(self):
-            return_tuple = self.wandber['container'].exec_run(
-                 start_command,
-                 tty=True,
-                 stream=True,
-                 stdin=True)
-            for line in return_tuple[1]:
-                self.logger.info(line.decode().strip())
-        
-        thread = threading.Thread(target=run_wandber, args=(self,))
-        thread.start()
-        return "Wandber consumer started!"
-
-
     def start_federated_learning(self):
 
         start_command = FL_COMMAND + \
