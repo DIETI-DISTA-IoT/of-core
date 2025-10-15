@@ -383,84 +383,6 @@ class ContainerManager:
             m = f"Error stopping federated learning: {e}"
             self.logger.error(m)
             return m
-
-        
-    def start_security_manager(self):
-
-        assert len(self.vehicle_names) > 0, "No vehicles found. Please create vehicles first."
-        vehicle_param_str = self.vehicle_names[0]
-        for vehicle in self.vehicle_names[1:]:
-            vehicle_param_str += f"\ {vehicle}"
-
-
-        start_command = SM_COMMAND + \
-            f" --logging_level={self.cfg.logging_level} " + \
-            f" --kafka_broker_url={self.cfg.wandb.kafka_broker_url} " + \
-            f" --kafka_consumer_group_id={self.cfg.wandb.kafka_consumer_group_id} " + \
-            f" --kafka_auto_offset_reset={self.cfg.wandb.kafka_auto_offset_reset} " + \
-            f" --kafka_topic_update_interval_secs={self.cfg.kafka_topic_update_interval_secs}" +\
-            f" --initialization_strategy={self.cfg.security_manager.initialization_strategy}" +\
-            f" --buffer_size={self.cfg.security_manager.buffer_size}" +\
-            f" --batch_size={self.cfg.security_manager.batch_size}" +\
-            f" --learning_rate={self.cfg.security_manager.learning_rate}" +\
-            f" --epoch_size={self.cfg.security_manager.epoch_size}" +\
-            f" --training_freq_seconds={self.cfg.security_manager.training_freq_seconds}" +\
-            f" --save_model_freq_epochs={self.cfg.security_manager.save_model_freq_epochs}" +\
-            f" --model_saving_path={self.cfg.security_manager.model_saving_path}" + \
-            f" --vehicle_names={vehicle_param_str}" + \
-            f" --initialization_strategy={self.cfg.security_manager.initialization_strategy}" + \
-            f" --input_dim={len(self.cfg.security_manager.probe_metrics)}" + \
-            f" --output_dim={self.cfg.security_manager.output_dim}" + \
-            f" --h_dim={self.cfg.security_manager.hidden_dim}" + \
-            f" --num_layers={self.cfg.security_manager.num_layers}" + \
-            f" --dropout={self.cfg.security_manager.dropout}" + \
-            f" --optimizer={self.cfg.security_manager.optimizer}" + \
-            f" --manager_port={self.cfg.dashboard.port}" + \
-            f" --sm_port={self.cfg.security_manager.sm_port}" +\
-            f" --true_positive_reward={self.cfg.security_manager.true_positive_reward}" + \
-            f" --false_positive_reward={self.cfg.security_manager.false_positive_reward}" + \
-            f" --true_negative_reward={self.cfg.security_manager.true_negative_reward}" + \
-            f" --false_negative_reward={self.cfg.security_manager.false_negative_reward}"
-            
-        
-        if self.cfg.security_manager.mitigation:
-            start_command += f" --mitigation"
-        if self.cfg.security_manager.layer_norm:
-            start_command += f" --layer_norm"
-        
-        def run_security_manager(self):
-            return_tuple = self.wandber['container'].exec_run(
-                 start_command,
-                 tty=True,
-                 stream=True,
-                 stdin=True)
-            for line in return_tuple[1]:
-                self.logger.info(line.decode().strip())
-        
-        thread = threading.Thread(target=run_security_manager, args=(self,))
-        thread.start()
-        return "Security Manager started!", 200
-    
-
-    def stop_security_manager(self):
-        try:
-            # Try to find and kill the process
-            pid_result = self.security_manager['container'].exec_run(f"pgrep -f '{SM_COMMAND}'")
-            pid = pid_result[1].decode().strip()
-            
-            if pid:
-                self.security_manager['container'].exec_run(f"kill -SIGINT {pid}")
-                m = "Stopping SM..."
-                self.logger.info(m)
-                return m
-            else:
-                m = "No running process found for security manager"
-                self.logger.info(m)
-                return m
-        except Exception as e:
-            m = f"Error stopping security manager: {e}"
-            self.logger.error(m)
-            return m
         
     
     def start_attack_from_vehicle(self, vehicle_name, origin):
@@ -521,34 +443,4 @@ class ContainerManager:
 
     def get_vehicle_status(self, vehicle_name):
         return self.vehicle_status_dict[vehicle_name]
-    
-
-    def start_mitigation(self):
-        security_manager_ip = self.containers_ips['wandber']
-        mitigation_service_port = self.cfg.security_manager.sm_port
-        url = f"http://{security_manager_ip}:{mitigation_service_port}/start-mitigation"
-        response = requests.post(url, json={})
-        
-        if response.status_code == 200:
-            m = "Mitigation started successfully."
-            self.logger.info(m)
-        else:
-            m = f"Failed to start mitigation. Status code: {response.status_code}"
-            self.logger.error(m)
-        return m, response.status_code
-
-
-    def stop_mitigation(self):
-        security_manager_ip = self.containers_ips['wandber']
-        mitigation_service_port = self.cfg.security_manager.sm_port
-        url = f"http://{security_manager_ip}:{mitigation_service_port}/stop-mitigation"
-        response = requests.post(url, json={})
-        
-        if response.status_code == 200:
-            m = "Mitigation stopped successfully."
-            self.logger.info(m)
-        else:
-            m = f"Failed to stop mitigation. Status code: {response.status_code}"
-            self.logger.error(m)
-        return m, response.status_code
 
