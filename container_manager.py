@@ -127,6 +127,18 @@ class ContainerManager:
         self.logger.info(f"Exiting...")
         exit(0)
 
+    def stream_container_logs(self, container):
+        
+        try:
+            container = self.client.containers.get(container)
+       
+            for line in container.logs(stream=True, follow=True):
+                yield f"data: {line.decode('utf-8').strip()}\n\n"
+        except docker.errors.NotFound:
+            yield f"data: [ERROR] Container '{container}' not found.\n\n"
+        except Exception as e:
+            yield f"data: [EXCEPTION] {str(e)}\n\n"
+
 
     def health_probes_thread(self):
         self.logger.info(f"Starting thread for dashboard health probes")
