@@ -225,7 +225,7 @@ class ContainerManager:
             cpu_period=cpu_period,
             cpu_quota=cpu_quota,
             cpuset_cpus=cpuset_cpus
-            # rely on image CMD to start the app
+            # command=["tail", "-f", "/dev/null"]  # idle command (Dev) comment to rely on image CMD
         )
         
 
@@ -242,7 +242,7 @@ class ContainerManager:
             num_cpus = os.cpu_count()
             cpuset_cpus = f"0-{num_cpus-1}"
 
-            
+
         self.client.containers.run(
             image="open_fair-consumer",
             name=container_name,
@@ -252,7 +252,7 @@ class ContainerManager:
             cpu_period=cpu_period,
             cpu_quota=cpu_quota,
             cpuset_cpus=cpuset_cpus,
-            command=["tail", "-f", "/dev/null"]  # idle command (Dev) uncomment to rely on image CMD
+            # command=["tail", "-f", "/dev/null"]  # idle command (Dev) comment to rely on image CMD
         )
 
 
