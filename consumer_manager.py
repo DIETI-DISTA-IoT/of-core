@@ -1,4 +1,3 @@
-import threading
 import logging
 from omegaconf import DictConfig
 import requests

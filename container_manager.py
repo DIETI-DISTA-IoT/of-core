@@ -212,6 +212,9 @@ class ContainerManager:
         cpu_period = int(self.producer_manager.vehicle_configs[vehicle_name]['cpu_period'])
         cpu_quota = int(self.producer_manager.vehicle_configs[vehicle_name]['cpu_quota'])
         cpuset_cpus = str(self.producer_manager.vehicle_configs[vehicle_name]['cpu_cores'])
+        if cpuset_cpus == "all":
+            num_cpus = os.cpu_count()
+            cpuset_cpus = f"0-{num_cpus-1}"
 
         self.client.containers.run(
             image="open_fair-producer",
@@ -235,7 +238,11 @@ class ContainerManager:
         cpu_period = int(self.consumer_manager.consumer_configs[vehicle_name]['cpu_period'])
         cpu_quota = int(self.consumer_manager.consumer_configs[vehicle_name]['cpu_quota'])
         cpuset_cpus = str(self.consumer_manager.consumer_configs[vehicle_name]['cpu_cores'])
+        if cpuset_cpus == "all":
+            num_cpus = os.cpu_count()
+            cpuset_cpus = f"0-{num_cpus-1}"
 
+            
         self.client.containers.run(
             image="open_fair-consumer",
             name=container_name,
@@ -244,8 +251,8 @@ class ContainerManager:
             environment=env_vars,
             cpu_period=cpu_period,
             cpu_quota=cpu_quota,
-            cpuset_cpus=cpuset_cpus
-            # rely on image CMD to start the app
+            cpuset_cpus=cpuset_cpus,
+            command=["tail", "-f", "/dev/null"]  # idle command (Dev) uncomment to rely on image CMD
         )
 
 
