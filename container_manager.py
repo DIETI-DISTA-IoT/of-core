@@ -185,8 +185,19 @@ class ContainerManager:
 
         for vehicle_name in self.vehicle_names:
 
-            self.create_producer(vehicle_name)
-            self.create_consumer(vehicle_name)
+            try:
+                self.logger.info(f"Creating producer for vehicle {vehicle_name}")
+                self.create_producer(vehicle_name)
+                self.logger.info(f"Created producer for vehicle {vehicle_name}")
+            except Exception as e:
+                self.logger.error(f"Error creating producer for vehicle {vehicle_name}: {e}")
+            
+            try:
+                self.logger.info(f"Creating consumer for vehicle {vehicle_name}")
+                self.create_consumer(vehicle_name)
+                self.logger.info(f"Created consumer for vehicle {vehicle_name}")
+            except Exception as e:
+                self.logger.error(f"Error creating consumer for vehicle {vehicle_name}: {e}")
 
         self.refresh_containers()
         return "Vehicles created!"
