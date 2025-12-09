@@ -220,6 +220,8 @@ class ContainerManager:
             "VEHICLE_NAME": vehicle_name,
             "HOST_IP": self.host_ip,
         }
+        env_vars.update(self.cfg.default_vehicle_config.common_env_vars)
+
         cpu_period = int(self.producer_manager.vehicle_configs[vehicle_name]['cpu_period'])
         cpu_quota = int(self.producer_manager.vehicle_configs[vehicle_name]['cpu_quota'])
         cpuset_cpus = str(self.producer_manager.vehicle_configs[vehicle_name]['cpu_cores'])
@@ -246,6 +248,8 @@ class ContainerManager:
             "VEHICLE_NAME": vehicle_name,
             "HOST_IP": self.host_ip,
         }
+        env_vars.update(self.cfg.default_vehicle_config.common_env_vars)
+
         cpu_period = int(self.consumer_manager.consumer_configs[vehicle_name]['cpu_period'])
         cpu_quota = int(self.consumer_manager.consumer_configs[vehicle_name]['cpu_quota'])
         cpuset_cpus = str(self.consumer_manager.consumer_configs[vehicle_name]['cpu_cores'])
