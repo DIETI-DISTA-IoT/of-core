@@ -241,7 +241,7 @@ class ContainerManager:
             cpu_period=cpu_period,
             cpu_quota=cpu_quota,
             cpuset_cpus=cpuset_cpus,
-            command=["tail", "-f", "/dev/null"]  # idle command (Dev) comment to rely on image CMD
+            # command=["tail", "-f", "/dev/null"]  # idle command (Dev) comment to rely on image CMD
         )
         
 
