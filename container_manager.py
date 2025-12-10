@@ -299,7 +299,7 @@ class ContainerManager:
         
 
         self.producer_manager = ProducerManager(self.cfg, self.producers, self.containers_ips)
-        self.consumer_manager = ConsumerManager(self.cfg, self.consumers)
+        self.consumer_manager = ConsumerManager(self.cfg, self.consumers, self.containers_ips)
             
     
     def produce_all(self):
