@@ -244,7 +244,10 @@ class ProducerManager:
             
             # Anomaly and diagnostics classes
             'anomaly_classes': vehicle_config.get('anomaly_classes', list(range(0, 19))),
-            'diagnostics_classes': vehicle_config.get('diagnostics_classes', list(range(0, 15)))
+            'diagnostics_classes': vehicle_config.get('diagnostics_classes', list(range(0, 15))),
+
+            # Adversarial degree:
+            'adversarial_degree': vehicle_config.get('adversarial_degree', 0)
         }
         
         # Final conversion to ensure everything is JSON serializable

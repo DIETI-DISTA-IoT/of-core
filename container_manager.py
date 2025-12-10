@@ -219,6 +219,9 @@ class ContainerManager:
         env_vars = {
             "VEHICLE_NAME": vehicle_name,
             "HOST_IP": self.host_ip,
+            "KAFKA_BROKER": self.cfg.default_vehicle_config.kafka_broker,
+            "LOGGING_LEVEL": self.cfg.logging_level,
+            "BOT_PORT": self.cfg.attack.bot_port
         }
         env_vars.update(self.cfg.default_vehicle_config.common_env_vars)
 
@@ -237,7 +240,7 @@ class ContainerManager:
             environment=env_vars,
             cpu_period=cpu_period,
             cpu_quota=cpu_quota,
-            cpuset_cpus=cpuset_cpus
+            cpuset_cpus=cpuset_cpus,
             # command=["tail", "-f", "/dev/null"]  # idle command (Dev) comment to rely on image CMD
         )
         
