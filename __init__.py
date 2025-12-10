@@ -4,3 +4,4 @@ from .cache import MessageCache
 from .metrics_logger import MetricsLogger
 from .kafka_consumer import KafkaMessageConsumer
 from .container_manager import ContainerManager
+from .train_simulator import Train, EventType
