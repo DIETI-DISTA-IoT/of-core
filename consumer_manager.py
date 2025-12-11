@@ -157,9 +157,10 @@ class ConsumerManager:
 
 
     def stop_consumer(self, consumer_name):
-        container = self.consumers[consumer_name]
+
         try:
-            container_ip = container.attrs['NetworkSettings']['IPAddress']
+            vehicle_name = consumer_name.split("_")[0]
+            container_ip = self.containers_ips[vehicle_name+"_consumer"]
             hostname_url = f"http://{consumer_name}:5000/stop"
             tried = []
             # Try hostname first
