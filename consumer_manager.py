@@ -33,10 +33,6 @@ class ConsumerManager:
             self.consumer_configs[vehicle_name] = self.default_consumer_config.copy()
             if type(vehicle) == DictConfig:
                 self.consumer_configs[vehicle_name].update(vehicle[vehicle_name])
-            if self.consumer_configs[vehicle_name]["anomaly_classes"] == "all":
-                self.consumer_configs[vehicle_name]["anomaly_classes"] = list(range(1, 19))
-            if self.consumer_configs[vehicle_name]["diagnostics_classes"] == "all":
-                self.consumer_configs[vehicle_name]["diagnostics_classes"] = list(range(1, 15))
 
 
     def start_all_consumers(self):

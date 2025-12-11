@@ -55,6 +55,7 @@ class ContainerManager:
                 vehicle_name = list(vehicle.keys())[0]
             self.vehicle_names.append(vehicle_name) 
 
+        self.vehicle_status_lock = threading.Lock()
         self.vehicle_status_dict = self.init_vehicle_status_dict()
         self.last_attack_started_at = {vehicle_name: time.time() for vehicle_name in self.vehicle_names}
         self.refresh_containers()
@@ -298,6 +299,7 @@ class ContainerManager:
             self.containers_ips[container.name] = container_ip 
         
 
+        if self.cfg.dashboard.proxy: self.proxy_configuration()
         self.producer_manager = ProducerManager(self.cfg, self.producers, self.containers_ips)
         self.consumer_manager = ConsumerManager(self.cfg, self.consumers, self.containers_ips)
             
@@ -421,10 +423,11 @@ class ContainerManager:
         response = requests.post(url, json={})
         preamble = "Automatic" if origin == "AI" else "Manual"
         if response.status_code == 200:
-            self.vehicle_status_dict[vehicle_name] = INFECTED
-            self.last_attack_started_at[vehicle_name] = time.time()
-            m = f"[BOTMASTER] - {preamble} attack at {vehicle_name} started successfully."
-            self.logger.info(m)
+            with self.vehicle_status_lock:
+                self.vehicle_status_dict[vehicle_name] = INFECTED
+                self.last_attack_started_at[vehicle_name] = time.time()
+                m = f"[BOTMASTER] - {preamble} attack at {vehicle_name} started successfully."
+                self.logger.info(m)
         else:
             m = f"[BOTMASTER] - Failed to start {preamble} attack at {vehicle_name}. Status code: {response.status_code}"
             self.logger.error(m)
@@ -443,10 +446,11 @@ class ContainerManager:
         response = requests.post(url, json={})
         adverb = "automatically" if origin == "AI" else "manually"
         if response.status_code == 200:
-            m = f"[ATO] Attack at {vehicle_name} stopped {adverb}."
-            self.logger.info(m)
-            self.vehicle_status_dict[f"{vehicle_name}"] = HEALTHY
-            reactive_mitigation_time = time.time() - self.last_attack_started_at[vehicle_name]
+            with self.vehicle_status_lock:
+                m = f"[ATO] Attack at {vehicle_name} stopped {adverb}."
+                self.logger.info(m)
+                self.vehicle_status_dict[f"{vehicle_name}"] = HEALTHY
+                reactive_mitigation_time = time.time() - self.last_attack_started_at[vehicle_name]
         else:
             m = f"[ATO] Failed to stop attack at {vehicle_name} {adverb}. Status code: {response.status_code}"
             self.logger.error(m)
