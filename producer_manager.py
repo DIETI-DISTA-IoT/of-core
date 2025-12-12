@@ -40,11 +40,6 @@ class ProducerManager:
             self.vehicle_names.append(vehicle_name)
             self.vehicle_configs[vehicle_name] = vehicle_config
             
-            # Set default classes if not specified
-            if vehicle_config.get("anomaly_classes") == "all":
-                self.vehicle_configs[vehicle_name]["anomaly_classes"] = list(range(0, 19))
-            if vehicle_config.get("diagnostics_classes") == "all":
-                self.vehicle_configs[vehicle_name]["diagnostics_classes"] = list(range(1, 15))
 
     def _convert_to_json_serializable(self, obj):
         """Convert OmegaConf objects to JSON serializable Python objects"""
@@ -65,18 +60,19 @@ class ProducerManager:
     def start_all_producers(self):
         """Start all producers using HTTP API"""
         results = []
-        for producer_name, vehicle_name in zip(self.producers.keys(), self.vehicle_names):
-            result = self.start_producer(producer_name, self.producers[producer_name], self.vehicle_configs[vehicle_name])
+        for producer_name in self.producers.keys():
+            vehicle_name = producer_name.split('_')[0]
+            result = self.start_producer(producer_name, self.vehicle_configs[vehicle_name])
             results.append(result)
         return "All producers started!", results
 
-    def start_producer(self, producer_name, producer_container, vehicle_config):
+    def start_producer(self, producer_name, vehicle_config):
         """Start producer using HTTP API instead of command execution"""
         try:
             # Get container IP
             container_ip = self.containers_ips.get(producer_name)
             if not container_ip:
-                return f"Failed to start producer {producer_name}: Container IP not found"
+                return f"Failed to prostart producer {producer_name}: Container IP not found"
             
             # Build candidate URLs: prefer DNS name when running inside the Docker network,
             # but fall back to direct container IP when running on host
@@ -210,9 +206,10 @@ class ProducerManager:
         logging.getLogger("PRODUCER_MANAGER").debug(f"Probe metrics type: {type(probe_metrics)}")
         logging.getLogger("PRODUCER_MANAGER").debug(f"Attack config type: {type(attack_config)}")
         
-        config_data = {
+        config_data = vehicle_config.copy()
+
+        config_data.update({
             'vehicle_name': vehicle_name,
-            'kafka_broker': vehicle_config.get('kafka_broker', 'kafka:9092'),
             'logging_level': self.logging_level,
             'manager_port': self.manager_port,
             'mode': self.mode,
@@ -221,34 +218,15 @@ class ProducerManager:
             'target_ip': attack_config.get('target_ip', '172.18.0.4'),
             'target_port': attack_config.get('target_port', 80),
             'bot_port': attack_config.get('bot_port', 5002),
-            
-            # Timing parameters
-            'probe_frequency_seconds': vehicle_config.get('probe_frequency_seconds', 2),
-            'ping_thread_timeout': vehicle_config.get('ping_thread_timeout', 5),
-            'ping_host': vehicle_config.get('ping_host', 'www.google.com'),
-            
+        
             # Attack parameters
             'duration': attack_config.get('duration', 0),
             'packet_size': attack_config.get('packet_size', 1024),
             'delay': attack_config.get('delay', 0.001),
             
-            # Data generation parameters
-            'mu_anomalies': vehicle_config.get('mu_anomalies', 157),
-            'mu_normal': vehicle_config.get('mu_normal', 115),
-            'alpha': vehicle_config.get('alpha', 0.2),
-            'beta': vehicle_config.get('beta', 1.9),
-            'time_emulation': vehicle_config.get('time_emulation', False),
-            
             # Probe metrics
             'probe_metrics': probe_metrics,
-            
-            # Anomaly and diagnostics classes
-            'anomaly_classes': vehicle_config.get('anomaly_classes', list(range(0, 19))),
-            'diagnostics_classes': vehicle_config.get('diagnostics_classes', list(range(0, 15))),
-
-            # Adversarial degree:
-            'adversarial_degree': vehicle_config.get('adversarial_degree', 0)
-        }
+        })
         
         # Final conversion to ensure everything is JSON serializable
         config_data = self._convert_to_json_serializable(config_data)
