@@ -89,25 +89,14 @@ class ConsumerManager:
             if not api_url:
                 return f"Failed to start consumer {consumer_name}: API not healthy"
 
+            cfg_payload = consumer_config.copy()
             # Build config payload
-            cfg_payload = {
-                'kafka_broker': consumer_config['kafka_broker'],
-                'buffer_size': consumer_config['buffer_size'],
-                'batch_size': consumer_config['batch_size'],
+            cfg_payload.update({
                 'logging_level': self.logging_level,
-                'weights_push_freq_seconds': consumer_config['weights_push_freq_seconds'],
-                'weights_pull_freq_seconds': consumer_config['weights_pull_freq_seconds'],
-                'kafka_topic_update_interval_secs': consumer_config['kafka_topic_update_interval_secs'],
-                'learning_rate': consumer_config['learning_rate'],
-                'epoch_size': consumer_config['epoch_size'],
                 'input_dim': self.cfg.anomaly_detection.input_dim,
                 'output_dim': self.cfg.anomaly_detection.output_dim,
                 'h_dim': self.cfg.anomaly_detection.h_dim,
                 'num_layers': self.cfg.anomaly_detection.num_layers,
-                'dropout': consumer_config['dropout'],
-                'optimizer': consumer_config['optimizer'],
-                'training_freq_seconds': consumer_config['training_freq_seconds'],
-                'save_model_freq_epochs': consumer_config['save_model_freq_epochs'],
                 'model_saving_path': vehicle_name + '_' + self.override + '_model.pth',
                 'probe_metrics': list(map(str, self.cfg.security_manager.probe_metrics)),
                 'mode': str(self.cfg.mode),
@@ -116,7 +105,7 @@ class ConsumerManager:
                 'false_positive_reward': float(self.cfg.security_manager.false_positive_reward),
                 'true_negative_reward': float(self.cfg.security_manager.true_negative_reward),
                 'false_negative_reward': float(self.cfg.security_manager.false_negative_reward)
-            }
+            })
 
             if self.cfg.security_manager.mitigation:
                 cfg_payload['mitigation'] = True
