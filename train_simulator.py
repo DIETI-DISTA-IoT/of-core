@@ -69,7 +69,7 @@ mean_nominal_Mp = 8.8
 anom_mean_Mp = 7.0
 attack_mean_Mp = 5.0
 
-Mp_std = [0.001,0.001,0.1,1]
+Mp_std = [0.001,0.01,0.1,1]
 Mp_braking_delta = 1.8
 Mp_emergency_delta = 2.5
 Mp_attack_delta = 4.5
@@ -79,7 +79,7 @@ mean_nominal_Bp=4.8
 anom_mean_Bp=3.0
 attack_mean_Bp=2.0
 
-Bp_std = [0.001,0.001,0.1,1]
+Bp_std = [0.001,0.01,0.1,1]
 Bp_braking_delta = 1.5
 Bp_emergency_delta = 3.0
 Bp_attack_delta = 4.0
