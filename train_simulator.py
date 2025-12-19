@@ -304,7 +304,7 @@ class Train:
         }
 
 
-    def generate_hydraulics(self, event_type, adv_degree=0):
+    def generate_hydraulics(self, event_type):
 
         if self.state.driving_mode != DrivingMode.BRAKING:
             base_bp = mean_nominal_Bp
@@ -327,8 +327,8 @@ class Train:
             base_mp -= Mp_attack_delta
 
 
-        self.state.bp = base_bp + smooth_noise(self.Bp_std[adv_degree])
-        self.state.mp = base_mp + smooth_noise(self.Mp_std[adv_degree])
+        self.state.bp = base_bp + smooth_noise(self.Bp_std)
+        self.state.mp = base_mp + smooth_noise(self.Mp_std)
         
         for k in self.state.brake_press_cylinder_main_BC1.keys():
             self.state.brake_press_cylinder_main_BC1[k] = base_main_cyl + smooth_noise(main_cyl_std)
@@ -390,7 +390,7 @@ class Train:
         }
     
 
-    def step(self, event_type=EventType.NORMAL, adv_degree=0):
+    def step(self, event_type=EventType.NORMAL):
         
         state_dict = {}
         train_context = self.generate_train_context(event_type)
@@ -399,7 +399,7 @@ class Train:
         state_dict.update(train_cab_control)
         train_traction = self.generate_traction(event_type)
         state_dict.update(train_traction)
-        train_hydraulics = self.generate_hydraulics(event_type, adv_degree=adv_degree)
+        train_hydraulics = self.generate_hydraulics(event_type)
         state_dict.update(train_hydraulics)
         train_ertms = self.generate_ertms(event_type)
         state_dict.update(train_ertms)
