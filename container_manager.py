@@ -239,9 +239,9 @@ class ContainerManager:
             detach=True,
             network="trains_network",
             environment=env_vars,
-            cpu_period=cpu_period,
-            cpu_quota=cpu_quota,
-            cpuset_cpus=cpuset_cpus,
+            # cpu_period=cpu_period,
+            # cpu_quota=cpu_quota,
+            # cpuset_cpus=cpuset_cpus,
             # command=["tail", "-f", "/dev/null"]  # idle command (Dev) comment to rely on image CMD
         )
         
@@ -268,9 +268,9 @@ class ContainerManager:
             detach=True,
             network="trains_network",
             environment=env_vars,
-            cpu_period=cpu_period,
-            cpu_quota=cpu_quota,
-            cpuset_cpus=cpuset_cpus,
+            # cpu_period=cpu_period,
+            # cpu_quota=cpu_quota,
+            # cpuset_cpus=cpuset_cpus,
             # command=["tail", "-f", "/dev/null"]  # idle command (Dev) comment to rely on image CMD
         )
 
