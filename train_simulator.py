@@ -149,6 +149,7 @@ class Train:
 
     def __init__(self, kwargs):
         self.state = SimState()
+        print(f"Creating train with Mp_std={kwargs.Mp_std}, Bp_std={kwargs.Bp_std}")
         self.Mp_std = kwargs.Mp_std
         self.Bp_std = kwargs.Bp_std
 
