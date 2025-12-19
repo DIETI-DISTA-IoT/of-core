@@ -90,13 +90,10 @@ class ConsumerManager:
                 return f"Failed to start consumer {consumer_name}: API not healthy"
 
             cfg_payload = consumer_config.copy()
+            cfg_payload.update(self.cfg.anomaly_detection)
             # Build config payload
             cfg_payload.update({
                 'logging_level': self.logging_level,
-                'input_dim': self.cfg.anomaly_detection.input_dim,
-                'output_dim': self.cfg.anomaly_detection.output_dim,
-                'h_dim': self.cfg.anomaly_detection.h_dim,
-                'num_layers': self.cfg.anomaly_detection.num_layers,
                 'model_saving_path': vehicle_name + '_' + self.override + '_model.pth',
                 'probe_metrics': list(map(str, self.cfg.security_manager.probe_metrics)),
                 'mode': str(self.cfg.mode),
@@ -111,8 +108,6 @@ class ConsumerManager:
                 cfg_payload['mitigation'] = True
             if self.cfg.dashboard.proxy:
                 cfg_payload['no_proxy_host'] = True
-            if self.cfg.anomaly_detection.layer_norm:
-                cfg_payload['layer_norm'] = True
 
 
             config_response = self.http.post(
