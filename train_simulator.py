@@ -69,7 +69,7 @@ mean_nominal_Mp = 8.8
 anom_mean_Mp = 7.0
 attack_mean_Mp = 5.0
 
-Mp_std = [0.001,0.01,0.1,1]
+
 Mp_braking_delta = 1.8
 Mp_emergency_delta = 2.5
 Mp_attack_delta = 4.5
@@ -79,7 +79,6 @@ mean_nominal_Bp=4.8
 anom_mean_Bp=3.0
 attack_mean_Bp=2.0
 
-Bp_std = [0.001,0.01,0.1,1]
 Bp_braking_delta = 1.5
 Bp_emergency_delta = 3.0
 Bp_attack_delta = 4.0
@@ -148,9 +147,10 @@ class SimState:
 
 class Train:
 
-    def __init__(self):
+    def __init__(self, kwargs):
         self.state = SimState()
-
+        self.Mp_std = kwargs.Mp_std
+        self.Bp_std = kwargs.Bp_std
 
     def generate_train_context(self, event_type):
 
@@ -327,8 +327,8 @@ class Train:
             base_mp -= Mp_attack_delta
 
 
-        self.state.bp = base_bp + smooth_noise(Bp_std[adv_degree])
-        self.state.mp = base_mp + smooth_noise(Mp_std[adv_degree])
+        self.state.bp = base_bp + smooth_noise(self.Bp_std[adv_degree])
+        self.state.mp = base_mp + smooth_noise(self.Mp_std[adv_degree])
         
         for k in self.state.brake_press_cylinder_main_BC1.keys():
             self.state.brake_press_cylinder_main_BC1[k] = base_main_cyl + smooth_noise(main_cyl_std)
