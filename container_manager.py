@@ -352,64 +352,38 @@ class ContainerManager:
 
 
     def start_federated_learning(self):
+        # algorithmic params:
+        fl_config = self.cfg.federated_learning.copy()
+        # architectural params:
+        fl_config.update(self.cfg.anomaly_detection)
+        # communication:
+        fl_config.update(self.cfg.wandb)
 
-        start_command = FL_COMMAND + \
-            f" --logging_level={self.cfg.logging_level} " + \
-            f" --project_name={self.cfg.wandb.project_name} " + \
-            f" --run_name={self.cfg.wandb.run_name} " + \
-            f" --kafka_broker_url={self.cfg.wandb.kafka_broker_url} " + \
-            f" --kafka_consumer_group_id={self.cfg.wandb.kafka_consumer_group_id} " + \
-            f" --kafka_auto_offset_reset={self.cfg.wandb.kafka_auto_offset_reset} " + \
-            f" --kafka_topic_update_interval_secs={self.cfg.kafka_topic_update_interval_secs}" +\
-            f" --aggregation_strategy={self.cfg.federated_learning.aggregation_strategy}" +\
-            f" --initialization_strategy={self.cfg.federated_learning.initialization_strategy}" +\
-            f" --aggregation_interval_secs={self.cfg.federated_learning.aggregation_interval_secs}" +\
-            f" --weights_buffer_size={self.cfg.federated_learning.weights_buffer_size}" +\
-            f" --output_dim={self.cfg.anomaly_detection.output_dim}" + \
-            f" --h_dim={self.cfg.anomaly_detection.h_dim}" + \
-            f" --num_layers={self.cfg.anomaly_detection.num_layers}" +\
-            f" --input_dim={self.cfg.anomaly_detection.input_dim}" +\
-            " --probe_metrics=" + ",".join(map(str,self.cfg.security_manager.probe_metrics)) + \
-            " --mode=" + str(self.cfg.mode)
-        
-        if self.cfg.wandb.online:
-            start_command += " --online"
-        if self.cfg.anomaly_detection.layer_norm:
-            start_command += " --layer_norm"
-        
-        def run_federated_learning(self):
-            return_tuple = self.wandber['container'].exec_run(
-                 start_command,
-                 tty=True,
-                 stream=True,
-                 stdin=True)
-            for line in return_tuple[1]:
-                self.logger.info(line.decode().strip())
-        
-        thread = threading.Thread(target=run_federated_learning, args=(self,))
-        thread.start()
-        return "Federated learning started!"
+        self.logger.info("Starting federated learning...")
+        wandber_ip = self.containers_ips['wandber']
+        url = f'http://{wandber_ip}:5000/start_federated_learning'
+        response = requests.post(url, json=fl_config)
+        if response.status_code != 200:
+            m = f"Error starting federated learning: {response.text}"
+            self.logger.error(m)
+        else:
+            m = f"Federated learning started!"
+            self.logger.info(m)
+        return m, response.status_code
     
 
     def stop_federated_learning(self):
-        try:
-            # Try to find and kill the process
-            pid_result = self.federated_learner['container'].exec_run(f"pgrep -f '{FL_COMMAND}'")
-            pid = pid_result[1].decode().strip()
-            
-            if pid:
-                self.federated_learner['container'].exec_run(f"kill -SIGINT {pid}")
-                m = "Stopping FL..."
-                self.logger.info(m)
-                return m
-            else:
-                m = "No running process found for federated learning"
-                self.logger.info(m)
-                return m
-        except Exception as e:
-            m = f"Error stopping federated learning: {e}"
+        self.logger.info("Stopping federated learning...")
+        wandber_ip = self.containers_ips['wandber']
+        url = f'http://{wandber_ip}:5000/stop_federated_learning'
+        response = requests.post(url, json={})
+        if response.status_code != 200:
+            m = f"Error stopping federated learning: {response.text}"
             self.logger.error(m)
-            return m
+        else:
+            m = f"Federated learning stopped!"
+            self.logger.info(m)
+        return m, response.status_code
         
     
     def start_attack_from_vehicle(self, vehicle_name, origin):
