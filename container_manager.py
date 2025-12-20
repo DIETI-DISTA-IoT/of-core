@@ -15,6 +15,7 @@ import requests
 import os
 import platform
 import socket
+from omegaconf import OmegaConf 
 
 
 WANDBER_COMMAND = "python wandber.py"
@@ -353,16 +354,20 @@ class ContainerManager:
 
     def start_federated_learning(self):
         # algorithmic params:
-        fl_config = self.cfg.federated_learning.copy()
+        fl_config = OmegaConf.to_container(self.cfg.federated_learning, resolve=True).copy()
         # architectural params:
-        fl_config.update(self.cfg.anomaly_detection)
+        fl_config.update(OmegaConf.to_container(self.cfg.anomaly_detection, resolve=True))
         # communication:
-        fl_config.update(self.cfg.wandb)
+        fl_config.update(OmegaConf.to_container(self.cfg.wandb, resolve=True))
+        # command:
+        data = {}
+        data['command'] = 'start_federated_learning'
+        data['params'] = fl_config
 
         self.logger.info("Starting federated learning...")
         wandber_ip = self.containers_ips['wandber']
-        url = f'http://{wandber_ip}:5000/start_federated_learning'
-        response = requests.post(url, json=fl_config)
+        url = f'http://{wandber_ip}:5000/command'
+        response = requests.post(url, json=data)
         if response.status_code != 200:
             m = f"Error starting federated learning: {response.text}"
             self.logger.error(m)
@@ -375,8 +380,8 @@ class ContainerManager:
     def stop_federated_learning(self):
         self.logger.info("Stopping federated learning...")
         wandber_ip = self.containers_ips['wandber']
-        url = f'http://{wandber_ip}:5000/stop_federated_learning'
-        response = requests.post(url, json={})
+        url = f'http://{wandber_ip}:5000/command'
+        response = requests.post(url, json={'command':'stop_federated_learning'})
         if response.status_code != 200:
             m = f"Error stopping federated learning: {response.text}"
             self.logger.error(m)
