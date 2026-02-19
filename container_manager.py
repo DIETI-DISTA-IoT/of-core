@@ -416,6 +416,11 @@ class ContainerManager:
             self.logger.error(m)
 
         return {"message" :m, "mitigation_time": reactive_mitigation_time}
+    
+
+    def reset_noise(self, vehicle_name, Bp_std, Mp_std):
+        self.logger.info(f"Resetting noise for vehicle {vehicle_name}")
+        return self.producer_manager.reset_noise_in_producer(f"{vehicle_name}_producer", Bp_std, Mp_std)
 
 
     def start_preconf_attack(self):
