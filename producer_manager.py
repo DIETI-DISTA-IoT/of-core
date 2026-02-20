@@ -1,9 +1,7 @@
-import docker
 import logging
 import requests
 import time
-import yaml
-import os
+import json
 from omegaconf import ListConfig, DictConfig, OmegaConf
 
 class ProducerManager:
@@ -169,7 +167,7 @@ class ProducerManager:
                     f"{api_url}/command", 
                     json={
                         "command": "set_Mp_std",
-                        "Mp_std": Mp_std,
+                        "params": {"Mp_std": float(Mp_std)}
                     }, 
                     timeout=5)
             response.raise_for_status()
@@ -178,12 +176,19 @@ class ProducerManager:
                     f"{api_url}/command", 
                     json={
                         "command": "set_Bp_std",
-                        "Bp_std": Bp_std
+                        "params": {"Bp_std": float(Bp_std)}
                     }, 
                     timeout=5
                     )
             response.raise_for_status()
-            
+
+            # parse the response.text as a dict
+            response_dict = json.loads(response.text)
+            if "error" in response_dict:
+                return f"Failed to reset noise in producer {producer_name}: {response_dict['error']}"
+
+            logging.getLogger("PRODUCER_MANAGER").info(f"Noise reset in {producer_name} responded: {response_dict['result']}")
+
             return f"Noise in producer {producer_name} reset successfully"
         except requests.exceptions.RequestException as e:
             error_msg = f"Failed to reset noise in producer {producer_name}: {e}"
