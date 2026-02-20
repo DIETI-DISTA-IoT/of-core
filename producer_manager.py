@@ -165,10 +165,23 @@ class ProducerManager:
                 return f"Failed to reset noise in producer {producer_name}: Container IP not found"
             
             api_url = f"http://{container_ip}:5000"
-            response = self.http.post(f"{api_url}/set_Mp_std", json={"Mp_std": Mp_std}, timeout=30)
+            response = self.http.post(
+                    f"{api_url}/command", 
+                    json={
+                        "command": "set_Mp_std",
+                        "Mp_std": Mp_std,
+                    }, 
+                    timeout=5)
             response.raise_for_status()
 
-            response = self.http.post(f"{api_url}/set_Bp_std", json={"Bp_std": Bp_std}, timeout=30)
+            response = self.http.post(
+                    f"{api_url}/command", 
+                    json={
+                        "command": "set_Bp_std",
+                        "Bp_std": Bp_std
+                    }, 
+                    timeout=5
+                    )
             response.raise_for_status()
             
             return f"Noise in producer {producer_name} reset successfully"
