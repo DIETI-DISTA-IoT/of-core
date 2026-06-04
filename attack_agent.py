@@ -13,10 +13,13 @@ class AttackAgent():
         self.container_manager = container_manager
         self.alive = False
         self.interval = kwargs.attack.automatic_attack_interval_secs
+        self.thread = None
+
+    def start(self):
+        self.alive = True
         self.thread = threading.Thread(target=self.attacking_thread)
-        self.thread.daemon = True            
-
-
+        self.thread.daemon = True
+        self.thread.start()
 
     def attacking_thread(self):
         while self.alive:

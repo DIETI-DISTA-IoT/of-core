@@ -96,15 +96,14 @@ class ContainerManager:
 
     def start_automatic_attacks(self):
         self.logger.info("Starting automatic Attack Agent")
-        self.attack_agent.alive = True
-        self.attack_agent.thread.start()
+        self.attack_agent.start()
         return "Automatic Attack Agent started!"
 
 
     def stop_automatic_attacks(self):
         self.logger.info("Stopping automatic Attack Agent")
         self.attack_agent.alive = False
-        if self.attack_agent.thread.is_alive():
+        if self.attack_agent.thread is not None and self.attack_agent.thread.is_alive():
             self.attack_agent.thread.join(1)
         self.attack_agent.stop_all_attacks()
         self.logger.info("Attack Agent stopped correctly.")
@@ -437,4 +436,3 @@ class ContainerManager:
 
     def get_vehicle_status(self, vehicle_name):
         return self.vehicle_status_dict[vehicle_name]
-

@@ -134,7 +134,13 @@ class DashBoardMonitor():
     def get_rtt_requests(self):
         try:
             start = time.time()
-            response = requests.get(f"http://{self.ping_host}", timeout=self.ping_thread_timeout)
+            # proxies={} bypasses any system HTTP_PROXY env var so the probe
+            # measures direct network RTT rather than routing through the proxy
+            response = requests.get(
+                f"http://{self.ping_host}",
+                timeout=self.ping_thread_timeout,
+                proxies={}
+            )
             rtt = (time.time() - start) * 1000  # Convert to milliseconds
             return rtt
         except Exception as e:
