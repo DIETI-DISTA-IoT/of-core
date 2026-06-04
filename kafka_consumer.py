@@ -20,10 +20,11 @@ class KafkaMessageConsumer:
         self.parent = parent
         self.retry_delay = 1
 
-        configs = {'bootstrap.servers': cfg.dashboard.kafka_broker_url,  # Kafka broker URL
-                        'group.id': cfg.dashboard.kafka_consumer_group_id,  # Consumer group for offset management
-                        'auto.offset.reset': cfg.dashboard.kafka_auto_offset_reset,  # Start reading messages from the beginning if no offset is present
-                        'allow.auto.create.topics': 'true'  # crucial for topic updating
+        configs = {'bootstrap.servers': cfg.dashboard.kafka_broker_url,
+                        'group.id': cfg.dashboard.kafka_consumer_group_id,
+                        'auto.offset.reset': cfg.dashboard.kafka_auto_offset_reset,
+                        'allow.auto.create.topics': 'true',
+                        'log_level': 3,  # suppress rdkafka WARNING/INFO/DEBUG; keep ERROR+
                         }
         self.consumer = Consumer(configs)
         self.subscribe()
@@ -93,7 +94,6 @@ class KafkaMessageConsumer:
         try:
             # Decode the message value from bytes to string and parse JSON
             message_value = json.loads(msg.value().decode('utf-8'))
-            # self.parent.logger.debug(f"Received message from topic {msg.topic()}")
             return message_value
         except json.JSONDecodeError as e:
             self.parent.logger.error(f"Error deserializing message: {e}")
@@ -119,7 +119,6 @@ class KafkaMessageConsumer:
                 # Deserialize the message and process it
                 deserialized_data = self.deserialize_message(msg)
                 if deserialized_data:
-                    # self.parent.logger.debug(f"Processing message from topic {msg.topic()}")
                     self.parent.process_message_routine(msg.topic(), deserialized_data)
                 else:
                     self.parent.logger.warning("Deserialized message is None")
