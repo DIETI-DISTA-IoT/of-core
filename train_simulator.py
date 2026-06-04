@@ -2,11 +2,8 @@ import numpy as np
 from enum import Enum
 
 # ============================================================
-# UTILS: noise injection and value bounding
+# UTILS: value bounding
 # ============================================================
-def smooth_noise(scale=1.0):
-    return np.random.normal(0, scale)
-
 def bounded(value, min_val, max_val):
     return float(np.clip(value, min_val, max_val))
 
@@ -147,12 +144,17 @@ class Train:
         print(f"Creating train with Mp_std={kwargs.Mp_std}, Bp_std={kwargs.Bp_std}")
         self.Mp_std = kwargs.Mp_std
         self.Bp_std = kwargs.Bp_std
+        seed = getattr(kwargs, 'seed', None)
+        self.rng = np.random.default_rng(seed)
+
+    def _smooth_noise(self, scale=1.0):
+        return self.rng.normal(0, scale)
 
     def generate_train_context(self, event_type):
 
         # Speed limit evolves slowly
-        if np.random.rand() < 0.01:
-            self.state.speed_limit = np.random.choice([30, 60, 90, 120, 140, 160, 180])
+        if self.rng.random() < 0.01:
+            self.state.speed_limit = self.rng.choice([30, 60, 90, 120, 140, 160, 180])
 
         # Speed dynamics depend on driving mode (use enums for keys)
         accel_map = {
@@ -171,7 +173,7 @@ class Train:
         
         # apply acceleration + noise (bounded)
         self.state.speed = bounded(
-            self.state.speed + accel + smooth_noise(base_noise_scale),
+            self.state.speed + accel + self._smooth_noise(base_noise_scale),
             0, 250
         )
         
@@ -192,15 +194,15 @@ class Train:
             noise_scale = attack_noise
         """
 
-        # Ornstein–Uhlenbeck update
-        self.state.lat += theta * (LAT_MU - self.state.lat) * dt + np.random.normal(0, noise_scale)
-        self.state.lon += theta * (LON_MU - self.state.lon) * dt + np.random.normal(0, noise_scale)
+        # Ornstein-Uhlenbeck update
+        self.state.lat += theta * (LAT_MU - self.state.lat) * dt + self.rng.normal(0, noise_scale)
+        self.state.lon += theta * (LON_MU - self.state.lon) * dt + self.rng.normal(0, noise_scale)
 
         """
         # ATTACK: GPS spoof offsets
-        if event_type == EventType.ATTACK and np.random.rand() < 0.3:
-            self.state.lat += np.random.normal(0.05, 0.02)
-            self.state.lon += np.random.normal(0.05, 0.02)
+        if event_type == EventType.ATTACK and self.rng.random() < 0.3:
+            self.state.lat += self.rng.normal(0.05, 0.02)
+            self.state.lon += self.rng.normal(0.05, 0.02)
         """
 
         return {
@@ -214,23 +216,23 @@ class Train:
     def generate_cab_control(self, event_type):
 
         # Occasional cab switch (rare event, unchanged)
-        if np.random.rand() < 0.001:
+        if self.rng.random() < 0.001:
             self.state.active_cab = "M8" if self.state.active_cab == "M1" else "M1"
 
         # Occasionally change driving mode:
-        if np.random.rand() < 0.2:
+        if self.rng.random() < 0.2:
             if self.state.speed < 1:
-                self.state.driving_mode = np.random.choice(
+                self.state.driving_mode = self.rng.choice(
                     [DrivingMode.STANDSTILL, DrivingMode.TRACTION],
                     p=[0.7, 0.3]
                 )
             elif self.state.speed < 20:
-                self.state.driving_mode = np.random.choice(
+                self.state.driving_mode = self.rng.choice(
                     [DrivingMode.BRAKING, DrivingMode.TRACTION],
                     p=[0.3, 0.7]
                 )
             else:
-                self.state.driving_mode = np.random.choice(
+                self.state.driving_mode = self.rng.choice(
                     [DrivingMode.TRACTION, DrivingMode.COASTING, DrivingMode.BRAKING],
                     p=[0.3, 0.6, 0.1]
                 )          
@@ -245,7 +247,7 @@ class Train:
     def generate_traction(self, event_type):
 
         # Line voltage type changes occasionally
-        if np.random.rand() < 0.01:
+        if self.rng.random() < 0.01:
             if self.state.line_volt_type == LineVoltageType.DC:
                 self.state.line_volt_type = LineVoltageType.AC 
             else:
@@ -265,13 +267,13 @@ class Train:
         DC_voltage_noise = 200
         AC_voltage_noise = 1000
         
-        self.state.line_current = desired_curr + smooth_noise(line_current_noise)
+        self.state.line_current = desired_curr + self._smooth_noise(line_current_noise)
 
         # Line voltage depends on AC/DC
         if self.state.line_volt_type == LineVoltageType.DC:
-            self.state.line_voltage = 3000 + smooth_noise(DC_voltage_noise)
+            self.state.line_voltage = 3000 + self._smooth_noise(DC_voltage_noise)
         else:
-            self.state.line_voltage = 25000 + smooth_noise(AC_voltage_noise)
+            self.state.line_voltage = 25000 + self._smooth_noise(AC_voltage_noise)
 
 
         reporting_batt_T = {}
@@ -281,7 +283,7 @@ class Train:
 
         # Battery voltage
         for k in self.state.batt_T.keys():
-            self.state.batt_T[k] = bounded(self.state.batt_T[k] + smooth_noise(battery_drift_noise), battery_min, battery_max)
+            self.state.batt_T[k] = bounded(self.state.batt_T[k] + self._smooth_noise(battery_drift_noise), battery_min, battery_max)
             reporting_batt_T[k] = self.state.batt_T[k]
 
         """
@@ -322,20 +324,20 @@ class Train:
             base_bp -= Bp_attack_delta
             base_mp -= Mp_attack_delta
 
-        self.state.bp = base_bp + smooth_noise(0.01)
-        self.state.mp = base_mp + smooth_noise(0.01)
+        self.state.bp = base_bp + self._smooth_noise(0.01)
+        self.state.mp = base_mp + self._smooth_noise(0.01)
 
         if adversarial:
-            self.state.bp += smooth_noise(self.Bp_std)
-            self.state.mp += smooth_noise(self.Mp_std)
+            self.state.bp += self._smooth_noise(self.Bp_std)
+            self.state.mp += self._smooth_noise(self.Mp_std)
         
         for k in self.state.brake_press_cylinder_main_BC1.keys():
-            self.state.brake_press_cylinder_main_BC1[k] = base_main_cyl + smooth_noise(main_cyl_std)
-            self.state.brake_press_cylinder_main_BC2[k] = base_main_cyl + smooth_noise(main_cyl_std)
+            self.state.brake_press_cylinder_main_BC1[k] = base_main_cyl + self._smooth_noise(main_cyl_std)
+            self.state.brake_press_cylinder_main_BC2[k] = base_main_cyl + self._smooth_noise(main_cyl_std)
 
         for k in self.state.brake_press_cylinder_trailer_BC1.keys():
-            self.state.brake_press_cylinder_trailer_BC1[k] = base_trailer_cyl + smooth_noise(trailer_cyl_std)
-            self.state.brake_press_cylinder_trailer_BC2[k] = base_trailer_cyl + smooth_noise(trailer_cyl_std)
+            self.state.brake_press_cylinder_trailer_BC1[k] = base_trailer_cyl + self._smooth_noise(trailer_cyl_std)
+            self.state.brake_press_cylinder_trailer_BC2[k] = base_trailer_cyl + self._smooth_noise(trailer_cyl_std)
 
         # A change wrt dataset: 
         # Suppose now that the main reservoir and the breake pipe's pressure are in
@@ -356,17 +358,17 @@ class Train:
 
     def generate_ertms(self, event_type):
         # ============================================================
-        # SUBSYSTEM 5 — ERTMS / STATUS / HMI
+        # SUBSYSTEM 5 - ERTMS / STATUS / HMI
         # ============================================================
 
         # baseline state
-        if np.random.rand() < 0.001:
-            self.state.ertms_status = np.random.choice(
+        if self.rng.random() < 0.001:
+            self.state.ertms_status = self.rng.choice(
                 [ERTMSStatus.NORMAL, ERTMSStatus.DEGRADED, ERTMSStatus.FAULTY],
                 p=[0.85,0.1,0.05])
 
         # SIL counter increases
-        self.state.sil_impact += smooth_noise(1)
+        self.state.sil_impact += self._smooth_noise(1)
 
         """
         # anomaly: ERTMS degraded unexpectedly
@@ -375,7 +377,7 @@ class Train:
 
         # attack: force inconsistent state
         if event_type == EventType.ATTACK:
-            self.state.ertms_status = np.random.choice([0,1], p=[0.2,0.8])
+            self.state.ertms_status = self.rng.choice([0,1], p=[0.2,0.8])
             self.state.line_volt_type = 4 if self.state.line_volt_type == 2 else 2
         """
 
