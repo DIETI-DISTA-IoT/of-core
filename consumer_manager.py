@@ -35,6 +35,33 @@ class ConsumerManager:
                 self.consumer_configs[vehicle_name].update(vehicle[vehicle_name])
 
 
+    def update_consumer_configs(self, default_consumer_config: dict, vehicles: list) -> None:
+        """Rebuild per-consumer configs from an updated default, preserving per-vehicle overrides.
+
+        Replicates the __init__ layering: default_consumer_config is the new base,
+        then each vehicle's individual overrides are re-applied on top.
+        kafka_topic_update_interval_secs is preserved from the original default.
+        Only vehicles already known to this manager are updated.
+        """
+        new_default = dict(default_consumer_config)
+        new_default["kafka_topic_update_interval_secs"] = self.default_consumer_config.get(
+            "kafka_topic_update_interval_secs", new_default.get("kafka_topic_update_interval_secs")
+        )
+        self.default_consumer_config = new_default
+        for vehicle in vehicles:
+            if isinstance(vehicle, str):
+                vehicle_name = vehicle
+                per_vehicle_overrides = {}
+            else:
+                vehicle_name = list(vehicle.keys())[0]
+                per_vehicle_overrides = dict(vehicle[vehicle_name])
+            if vehicle_name not in self.consumer_configs:
+                continue
+            cfg = dict(new_default)
+            cfg.update(per_vehicle_overrides)
+            self.consumer_configs[vehicle_name] = cfg
+
+
     def start_all_consumers(self):
         results = []
         for consumer_name, consumer in self.consumers.items():
