@@ -39,6 +39,24 @@ class ProducerManager:
             self.vehicle_configs[vehicle_name] = vehicle_config
             
 
+    def update_vehicle_configs(self, default_vehicle_config: dict, vehicles: list) -> None:
+        """Rebuild per-vehicle configs from an updated default, preserving per-vehicle overrides.
+
+        Replicates the __init__ layering: default_vehicle_config is the new base,
+        then each vehicle's individual overrides (Mp_std, Bp_std, etc.) are re-applied on top.
+        Only vehicles already known to this manager are updated.
+        """
+        for vehicle in vehicles:
+            if isinstance(vehicle, str):
+                vehicle_name = vehicle
+                vehicle_config = dict(default_vehicle_config)
+            else:
+                vehicle_name = list(vehicle.keys())[0]
+                vehicle_config = dict(default_vehicle_config)
+                vehicle_config.update(vehicle[vehicle_name])
+            if vehicle_name in self.vehicle_configs:
+                self.vehicle_configs[vehicle_name] = vehicle_config
+
     def _convert_to_json_serializable(self, obj):
         """Convert OmegaConf objects to JSON serializable Python objects"""
         if isinstance(obj, (ListConfig, list)):
