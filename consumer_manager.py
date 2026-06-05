@@ -125,6 +125,7 @@ class ConsumerManager:
                 'probe_metrics': list(map(str, self.cfg.security_manager.probe_metrics)),
                 'mode': str(self.cfg.mode),
                 'manager_port': int(self.cfg.dashboard.port),
+                'manager_ip': self.containers_ips.get('dashboard'),
                 'true_positive_reward': float(self.cfg.security_manager.true_positive_reward),
                 'false_positive_reward': float(self.cfg.security_manager.false_positive_reward),
                 'true_negative_reward': float(self.cfg.security_manager.true_negative_reward),
