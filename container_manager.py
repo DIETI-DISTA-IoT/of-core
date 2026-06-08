@@ -291,9 +291,10 @@ class ContainerManager:
                 self.producers[container.name] = container
             elif 'consumer' in container.name:
                 self.consumers[container.name] = container
+            elif 'fedlearningmanager' in container.name:
+                self.federated_learner['container'] = container
             elif 'wandber' in container.name:
                 self.wandber['container'] = container
-                self.federated_learner['container'] = container
                 self.security_manager['container'] = container
 
             self.containers_ips[container.name] = container_ip 
@@ -345,8 +346,8 @@ class ContainerManager:
         data['params'] = fl_config
 
         self.logger.info("Starting federated learning...")
-        wandber_ip = self.containers_ips['wandber']
-        url = f'http://{wandber_ip}:5000/command'
+        fl_manager_ip = self.containers_ips['fedlearningmanager']
+        url = f'http://{fl_manager_ip}:5000/command'
         response = requests.post(url, json=data)
         if response.status_code != 200:
             m = f"Error starting federated learning: {response.text}"
@@ -359,8 +360,8 @@ class ContainerManager:
 
     def stop_federated_learning(self):
         self.logger.info("Stopping federated learning...")
-        wandber_ip = self.containers_ips['wandber']
-        url = f'http://{wandber_ip}:5000/command'
+        fl_manager_ip = self.containers_ips['fedlearningmanager']
+        url = f'http://{fl_manager_ip}:5000/command'
         response = requests.post(url, json={'command':'stop_federated_learning'})
         if response.status_code != 200:
             m = f"Error stopping federated learning: {response.text}"
