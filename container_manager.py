@@ -333,7 +333,29 @@ class ContainerManager:
         return "All consumers stopped!"
 
 
-    def start_federated_learning(self):
+    def apply_runtime_overrides(self, overrides):
+        """Merge runtime config overrides pushed by the dashboard control plane
+        into the live cfg, in place.
+
+        This is what lets values selected at runtime (e.g. anomaly_detection.model_type
+        or federated_learning.aggregation_strategy) actually reach the containers
+        started afterwards — consumers read self.cfg.anomaly_detection and the FL
+        manager payload is built from self.cfg — instead of always using the
+        dashboard's boot-time config. Mutating in place preserves the references
+        held by sub-managers (consumer_manager / producer_manager).
+        """
+        if not overrides:
+            return
+        OmegaConf.set_struct(self.cfg, False)
+        self.cfg.merge_with(OmegaConf.create(overrides))
+        self.logger.info(f"Applied runtime config overrides for: {list(overrides.keys())}")
+
+
+    def start_federated_learning(self, params=None):
+        # Overlay any runtime overrides (architecture, aggregation strategy, ...)
+        # onto the live cfg before building the payload, so the FL manager runs
+        # the architecture/strategy actually selected for this run.
+        self.apply_runtime_overrides(params)
         # algorithmic params:
         fl_config = OmegaConf.to_container(self.cfg.federated_learning, resolve=True).copy()
         # architectural params:
