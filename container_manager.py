@@ -268,6 +268,11 @@ class ContainerManager:
             detach=True,
             network="trains_network",
             environment=env_vars,
+            # Automatically restart the consumer if its process dies (e.g. OOM
+            # kill, Kafka fatal error, unhandled exception). "unless-stopped"
+            # means Docker keeps it running across crashes but honours an
+            # explicit `docker stop` / delete-vehicles teardown.
+            restart_policy={"Name": "unless-stopped"},
             # cpu_period=cpu_period,
             # cpu_quota=cpu_quota,
             # cpuset_cpus=cpuset_cpus,
