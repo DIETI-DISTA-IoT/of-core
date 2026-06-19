@@ -56,7 +56,7 @@ attack_noise = 0.01
 # ====================================
 # HYDRAULIC CONSTANTS (from dataset)
 # ====================================
-# Note: 
+# Note:
 # means here correspond to high-quantiles in data (e.g. 65-75%)... (practical stats)
 # deltas to low-quantiles.
 
@@ -164,19 +164,19 @@ class Train:
             DrivingMode.BRAKING: -2.5,     # braking
         }
 
-        # Default process noise 
+        # Default process noise
         base_noise_scale = 0.5
 
         # get accel according to current driving mode
         accel = accel_map.get(self.state.driving_mode, 0.0)
 
-        
+
         # apply acceleration + noise (bounded)
         self.state.speed = bounded(
             self.state.speed + accel + self._smooth_noise(base_noise_scale),
             0, 250
         )
-        
+
         """
         # If attack: create a clear, separable overspeed pattern (speed >> speed_limit)
         # This makes ATTACKs easy to detect by models that learn relationships between speed and speed_limit.
@@ -211,7 +211,7 @@ class Train:
             "_GPS_LAT": self.state.lat,
             "_GPS_LON": self.state.lon
         }
-        
+
 
     def generate_cab_control(self, event_type):
 
@@ -235,21 +235,21 @@ class Train:
                 self.state.driving_mode = self.rng.choice(
                     [DrivingMode.TRACTION, DrivingMode.COASTING, DrivingMode.BRAKING],
                     p=[0.3, 0.6, 0.1]
-                )          
+                )
 
         return {
             "CabEnabled_M1": 1 if self.state.active_cab == "M1" else 0,
             "CabEnabled_M8": 1 if self.state.active_cab == "M8" else 0,
             "MDS_StatoMarcia": self.state.driving_mode.value
         }
-    
+
 
     def generate_traction(self, event_type):
 
         # Line voltage type changes occasionally
         if self.rng.random() < 0.01:
             if self.state.line_volt_type == LineVoltageType.DC:
-                self.state.line_volt_type = LineVoltageType.AC 
+                self.state.line_volt_type = LineVoltageType.AC
             else:
                 self.state.line_volt_type = LineVoltageType.DC
 
@@ -266,7 +266,7 @@ class Train:
         line_current_noise = 10
         DC_voltage_noise = 200
         AC_voltage_noise = 1000
-        
+
         self.state.line_current = desired_curr + self._smooth_noise(line_current_noise)
 
         # Line voltage depends on AC/DC
@@ -309,7 +309,7 @@ class Train:
             base_mp = mean_nominal_Mp
             base_main_cyl = mean_nominal_main_cyl
             base_trailer_cyl = mean_nominal_trailer_cyl
-        
+
         else:
             base_bp = mean_nominal_Bp - Bp_braking_delta
             base_mp = mean_nominal_Mp - Mp_braking_delta
@@ -327,10 +327,6 @@ class Train:
         self.state.bp = base_bp + self._smooth_noise(0.01)
         self.state.mp = base_mp + self._smooth_noise(0.01)
 
-        if adversarial:
-            self.state.bp += self._smooth_noise(self.Bp_std)
-            self.state.mp += self._smooth_noise(self.Mp_std)
-        
         for k in self.state.brake_press_cylinder_main_BC1.keys():
             self.state.brake_press_cylinder_main_BC1[k] = base_main_cyl + self._smooth_noise(main_cyl_std)
             self.state.brake_press_cylinder_main_BC2[k] = base_main_cyl + self._smooth_noise(main_cyl_std)
@@ -339,11 +335,22 @@ class Train:
             self.state.brake_press_cylinder_trailer_BC1[k] = base_trailer_cyl + self._smooth_noise(trailer_cyl_std)
             self.state.brake_press_cylinder_trailer_BC2[k] = base_trailer_cyl + self._smooth_noise(trailer_cyl_std)
 
-        # A change wrt dataset: 
+        # A change wrt dataset:
         # Suppose now that the main reservoir and the breake pipe's pressure are in
         # bars/100
         self.state.bp *= 100
         self.state.mp *= 100
+
+        # Adversarial perturbation is applied AFTER the *100 rescale, so that
+        # Mp_std/Bp_std (and the consumer's sigma-grid eval, which perturbs the
+        # same usBpPres/usMpPres features as emitted on the wire) operate on the
+        # same scale. Since std scales linearly under a constant multiplier
+        # (std(c*X) = c*std(X), unlike variance which scales as c^2), this is
+        # the *100-scaled equivalent of adding noise with std=Bp_std/Mp_std
+        # before the rescale: (X + N) * 100 == X*100 + N*100.
+        if adversarial:
+            self.state.bp += self._smooth_noise(100 * self.Bp_std)
+            self.state.mp += self._smooth_noise(100 * self.Mp_std)
 
 
         return {
@@ -354,7 +361,7 @@ class Train:
             "usBpPres": self.state.bp,
             "usMpPres": self.state.mp
         }
-    
+
 
     def generate_ertms(self, event_type):
         # ============================================================
@@ -389,10 +396,10 @@ class Train:
             "HMI_DCPntSts_T7": self.state.dc_status["T7"],
             "HMI_impSIL": self.state.sil_impact
         }
-    
+
 
     def step(self, event_type=EventType.NORMAL, adversarial=False):
-        
+
         state_dict = {}
         train_context = self.generate_train_context(event_type)
         state_dict.update(train_context)
